@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
 # обновить pip и поставить PyTorch с CUDA 12.1
 RUN python3 -m pip install --upgrade pip
 RUN pip3 install --no-cache-dir --index-url https://download.pytorch.org/whl/cu121 \
-    torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1
+    torch torchvision torchaudio
 
 # скачать ComfyUI
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /opt/ComfyUI
