@@ -1,7 +1,7 @@
 import os
 import asyncio
 from typing import Optional, Any, Dict
-
+import json
 import httpx
 from fastapi import FastAPI, UploadFile, File, Form, Body, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse, Response
@@ -28,25 +28,95 @@ async def health():
 # ---------------------------
 # LLM (Ollama)  /chat
 # ---------------------------
-@app.post("/chat")
+app.post("/chat")
 async def chat(payload: Dict[str, Any] = Body(...)):
     """
-    Expects: {"prompt": "...", "model": "mistral:7b-instruct-q4_K_M", ...ollama options}
-    Forwards to: POST {OLLAMA}/api/generate
+    Expects:
+      {
+        "prompt": "…",
+        "model": "mistral:7b-instruct-q4_K_M",     # optional (есть дефолт)
+        "system": "Ты — русскоязычный ассистент",  # optional (есть дефолт)
+        "options": {"temperature":0.2, ...},       # optional
+        "stream": false                             # optional
+      }
+    Forwards to Ollama /api/generate and tolerates both streaming and non-streaming.
     """
     prompt = payload.get("prompt")
     if not prompt:
         raise HTTPException(400, "Field 'prompt' is required")
 
-    # set default model if not provided
-    payload.setdefault("model", "mistral:7b-instruct-q4_K_M")
-    # ensure we don't accidentally enable streaming in gateway
-    payload.setdefault("stream", False)
+    model = payload.get("model") or "mistral:7b-instruct-q4_K_M"
+    system = payload.get("system") or "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
+    options = payload.get("options") or {"temperature": 0.2, "top_p": 0.9, "repeat_penalty": 1.1}
+    stream = payload.get("stream")
+    if stream is None:
+        stream = False  # по умолчанию работаем в нестримовом режиме
 
-    r = await client.post(f"{OLLAMA}/api/generate", json=payload)
-    if r.is_error:
-        raise HTTPException(r.status_code, r.text)
-    return JSONResponse(r.json())
+    req = {
+        "model": model,
+        "prompt": prompt,
+        "system": system,
+        "options": options,
+        "stream": stream
+    }
+
+    # 1) сначала пробуем обычный (non-streaming) путь
+    if stream is False:
+        r = await client.post(f"{OLLAMA}/api/generate", json=req)
+        if r.is_error:
+            raise HTTPException(r.status_code, r.text)
+
+        # Иногда Ollama может вернуть несколько JSON'ов даже при stream=false (редко).
+        # Попробуем безопасный парсинг: если есть несколько строк JSON — склеим response.
+        txt = r.text.strip()
+        try:
+            data = json.loads(txt)
+            return JSONResponse(data)
+        except json.JSONDecodeError:
+            # fallback: соберём построчно
+            response_text = ""
+            done_obj = {}
+            for line in txt.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    response_text += obj.get("response", "")
+                    if obj.get("done"):
+                        done_obj = obj
+                except Exception:
+                    # игнорируем мусорные строки
+                    continue
+            if not response_text and not done_obj:
+                # совсем не смогли распарсить — вернём как есть
+                return JSONResponse({"raw": txt})
+            merged = {"model": model, "response": response_text, "done": True}
+            if done_obj:
+                merged.update({k: v for k, v in done_obj.items() if k not in merged})
+            return JSONResponse(merged)
+
+    # 2) stream=true: читаем по строкам и агрегируем
+    async with client.stream("POST", f"{OLLAMA}/api/generate", json=req) as resp:
+        if resp.is_error:
+            text = await resp.aread()
+            raise HTTPException(resp.status_code, text.decode("utf-8", errors="ignore"))
+        response_text = ""
+        done_obj = {}
+        async for chunk in resp.aiter_lines():
+            if not chunk:
+                continue
+            try:
+                obj = json.loads(chunk)
+                response_text += obj.get("response", "")
+                if obj.get("done"):
+                    done_obj = obj
+            except Exception:
+                continue
+        merged = {"model": model, "response": response_text, "done": True}
+        if done_obj:
+            merged.update({k: v for k, v in done_obj.items() if k not in merged})
+        return JSONResponse(merged)
 
 # ---------------------------
 # STT (Whisper)  /stt
