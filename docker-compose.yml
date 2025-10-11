@@ -54,15 +54,15 @@ services:
 
   # === Stable Diffusion pipelines: ComfyUI ===
   comfyui:
-    image: ghcr.io/comfyanonymous/comfyui:latest
+    build: ./comfyui
     restart: unless-stopped
     environment:
       - CLI_ARGS=--listen 0.0.0.0 --port 8188
     ports:
       - "8188:8188"
     volumes:
-      - ${COMFY_MODELS}:/root/ComfyUI/models
-      - ./volumes/comfyui:/root/ComfyUI/custom
+      - ${COMFY_MODELS}:/opt/ComfyUI/models
+      - ./volumes/comfyui:/opt/ComfyUI/custom
     deploy:
       resources:
         reservations:
