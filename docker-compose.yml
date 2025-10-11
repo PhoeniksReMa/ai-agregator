@@ -1,0 +1,94 @@
+version: "3.9"
+
+services:
+  # === LLM: Mistral 7B через Ollama ===
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    volumes:
+      - ${OLLAMA_MODELS}:/root/.ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              # Закрепляем за одной 3080 Ti, например id из nvidia-smi
+              device_ids: ["${GPU_MISTRAL}"]
+    runtime: nvidia
+
+  # === TTS: XTTS v2 (Coqui) ===
+  xtts:
+    build: ./xtts
+    restart: unless-stopped
+    environment:
+      - COQUI_TTS_CACHE=${XTTS_CACHE}
+    volumes:
+      - ${XTTS_CACHE}:/root/.local/share/tts
+    ports:
+      - "8021:8021"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              device_ids: ["${GPU_TTS}"]
+    runtime: nvidia
+
+  # === STT: Whisper (Faster-Whisper) ===
+  whisper:
+    build: ./whisper
+    restart: unless-stopped
+    environment:
+      - WHISPER_CACHE=${WHISPER_CACHE}
+    volumes:
+      - ${WHISPER_CACHE}:/root/.cache
+    ports:
+      - "8022:8022"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              device_ids: ["${GPU_WHISPER}"]
+    runtime: nvidia
+
+  # === Stable Diffusion pipelines: ComfyUI ===
+  comfyui:
+    image: ghcr.io/comfyanonymous/comfyui:latest
+    restart: unless-stopped
+    environment:
+      - CLI_ARGS=--listen 0.0.0.0 --port 8188
+    ports:
+      - "8188:8188"
+    volumes:
+      - ${COMFY_MODELS}:/root/ComfyUI/models
+      - ./volumes/comfyui:/root/ComfyUI/custom
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              # Несколько GPU под SD (ComfyUI сам распределит очередь)
+              device_ids: [${GPU_SD}]
+    runtime: nvidia
+
+  # === API-шлюз: FastAPI, сводит всё в единое API ===
+  gateway:
+    build: ./gateway
+    restart: unless-stopped
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - XTTS_URL=http://xtts:8021
+      - WHISPER_URL=http://whisper:8022
+      - COMFY_URL=http://comfyui:8188
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ollama
+      - xtts
+      - whisper
+      - comfyui
