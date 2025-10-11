@@ -47,7 +47,7 @@ async def chat(payload: Dict[str, Any] = Body(...)):
 
     model = payload.get("model") or "mistral:7b-instruct-q4_K_M"
     if model in ["qwen", "qwen25", "qwen-ru"]:
-        model = "qwen25-ru"
+        model = "qwen2.5:7b-instruct-q4_K_M"
     system = payload.get("system") or "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
     options = payload.get("options") or {"temperature": 0.2, "top_p": 0.9, "repeat_penalty": 1.1}
     stream = payload.get("stream")
