@@ -123,18 +123,23 @@ async def chat(payload: Dict[str, Any] = Body(...)):
 # ---------------------------
 @app.post("/stt")
 async def stt(file: UploadFile = File(...), language: Optional[str] = Form(None)):
-    """
-    Forwards multipart to: POST {WHISPER}/transcribe
-    """
     files = {"file": (file.filename, await file.read(), file.content_type or "application/octet-stream")}
     data = {}
     if language:
         data["language"] = language
 
-    r = await client.post(f"{WHISPER}/transcribe", files=files, data=data)
-    if r.is_error:
-        raise HTTPException(r.status_code, r.text)
-    return JSONResponse(r.json())
+    # небольшой ретрай на случай первого старта модели/инициализации CUDA
+    for attempt in range(2):
+        try:
+            r = await client.post(f"{WHISPER}/transcribe", files=files, data=data)
+            if r.is_error:
+                raise HTTPException(r.status_code, r.text)
+            return JSONResponse(r.json())
+        except httpx.RemoteProtocolError as e:
+            if attempt == 0:
+                await asyncio.sleep(1.0)
+                continue
+            raise HTTPException(status_code=502, detail=f"whisper upstream disconnected: {e}")
 
 # ---------------------------
 # TTS (XTTS)  /tts
