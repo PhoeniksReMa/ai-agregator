@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # === LLM: Mistral 7B через Ollama ===
   ollama:
@@ -16,7 +14,6 @@ services:
         reservations:
           devices:
             - capabilities: [gpu]
-              # Закрепляем за одной 3080 Ti, например id из nvidia-smi
               device_ids: ["${GPU_MISTRAL}"]
     runtime: nvidia
 
@@ -35,7 +32,6 @@ services:
         reservations:
           devices:
             - capabilities: [gpu]
-              device_ids: ["${GPU_TTS}"]
     runtime: nvidia
 
   # === STT: Whisper (Faster-Whisper) ===
@@ -72,8 +68,7 @@ services:
         reservations:
           devices:
             - capabilities: [gpu]
-              # Несколько GPU под SD (ComfyUI сам распределит очередь)
-              device_ids: [${GPU_SD}]
+              device_ids: ["${GPU_SD}"]
     runtime: nvidia
 
   # === API-шлюз: FastAPI, сводит всё в единое API ===
