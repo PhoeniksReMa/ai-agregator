@@ -28,7 +28,7 @@ async def health():
 # ---------------------------
 # LLM (Ollama)  /chat
 # ---------------------------
-app.post("/chat")
+@app.post("/chat")
 async def chat(payload: Dict[str, Any] = Body(...)):
     """
     Expects:
