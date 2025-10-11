@@ -28,7 +28,17 @@ async def health():
 # ---------------------------
 # LLM (Ollama)  /chat
 # ---------------------------
+
 @app.post("/chat")
+async def chat(payload: Dict[str, Any] = Body(...)):
+    r = await client.post(f"{OLLAMA}/api/chat", json={
+        "model": payload.get("model", "qwen25-ru"),
+        "messages": payload["messages"],
+        "stream": False,
+        "options": payload.get("options", {"num_ctx": 8192, "temperature": 0.7})
+    })
+    return JSONResponse(r.json())
+@app.post("/message")
 async def chat(payload: Dict[str, Any] = Body(...)):
     """
     Expects:
@@ -45,9 +55,7 @@ async def chat(payload: Dict[str, Any] = Body(...)):
     if not prompt:
         raise HTTPException(400, "Field 'prompt' is required")
 
-    model = payload.get("model") or "mistral:7b-instruct-q4_K_M"
-    if model in ["qwen", "qwen25", "qwen-ru"]:
-        model = "qwen2.5:7b-instruct-q4_K_M"
+    model = payload.get("model") or "qwen2.5:7b-instruct-q4_K_M"
     system = payload.get("system") or "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
     options = payload.get("options") or {"temperature": 0.2, "top_p": 0.9, "repeat_penalty": 1.1}
     stream = payload.get("stream")
