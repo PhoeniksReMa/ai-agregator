@@ -4,13 +4,10 @@ services:
     restart: unless-stopped
     environment:
       - OLLAMA_KEEP_ALIVE=24h
-      - OLLAMA_MODELS=/root/.ollama
+      - NVIDIA_VISIBLE_DEVICES=${GPU_MISTRAL}   # <<< добавь
     volumes:
       - ${OLLAMA_MODELS}:/root/.ollama
-      - ./ollama/entrypoint.sh:/entrypoint.sh
-    entrypoint: [ "/bin/bash", "/entrypoint.sh" ]
-    ports:
-      - "11434:11434"
+    ports: ["11434:11434"]
     runtime: nvidia
 
   xtts:
