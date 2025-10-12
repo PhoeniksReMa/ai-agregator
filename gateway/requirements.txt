@@ -3,3 +3,4 @@ uvicorn[standard]
 httpx
 pydantic
 openai
+python-multipart
