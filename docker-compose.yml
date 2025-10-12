@@ -48,7 +48,9 @@ services:
     runtime: nvidia
 
   gateway:
-    build: ./gateway
+    build:
+      context: .            # <-- корень проекта
+      dockerfile: gateway/Dockerfile
     restart: unless-stopped
     environment:
       - OLLAMA_URL=http://ollama:11434
