@@ -2,9 +2,9 @@ from typing import Any, Dict
 import json
 
 from fastapi import Body, HTTPException, APIRouter
-from ..settings import OLLAMA
-from ..dependencies import HttpDep
-from ..swagger_models import (
+from gateway.settings import OLLAMA
+from gateway.dependencies import HttpDep
+from gateway.swagger_models import (
     ChatGatewayResponse, ChatRequest, ChatOptions,
     GenerateGatewayResponse, MessageRequest, MessageOptions,
 )

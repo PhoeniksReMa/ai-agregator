@@ -1,8 +1,8 @@
 from fastapi import Body, HTTPException, APIRouter
 
-from ..settings import COMFY
-from ..dependencies import HttpDep
-from ..swagger_models import ComfyPayload
+from gateway.settings import COMFY
+from gateway.dependencies import HttpDep
+from gateway.swagger_models import ComfyPayload
 
 router = APIRouter(tags=["COMFY"])
 
