@@ -1,20 +1,17 @@
-import os
-
-import httpx
 from fastapi import FastAPI
+from settings import client
+from servises import comfy, ollama, wisper, xtts
 
 app = FastAPI(
     title="Local AI Aggregator Gateway",
     description="Шлюз к локальным сервисам: Ollama (LLM), Faster-Whisper (STT), XTTS (TTS), ComfyUI (image).",
 )
 
-OLLAMA = os.getenv("OLLAMA_URL", "http://ollama:11434")
-XTTS   = os.getenv("XTTS_URL",   "http://xtts:8021")
-WHISPER= os.getenv("WHISPER_URL","http://whisper:8022")
-COMFY  = os.getenv("COMFY_URL",  "http://comfyui:8188")
+app.include_router(xtts.router, prefix="", tags=["TTS"])
+app.include_router(wisper.router, prefix="", tags=["STT"])
+app.include_router(ollama.router, prefix="", tags=["LLM"])
+app.include_router(comfy.router, prefix="", tags=["Image"])
 
-TIMEOUT = httpx.Timeout(120.0, connect=10.0, read=120.0)
-client = httpx.AsyncClient(timeout=TIMEOUT)
 
 @app.on_event("shutdown")
 async def _shutdown():

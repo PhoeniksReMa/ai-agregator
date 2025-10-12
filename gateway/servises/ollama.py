@@ -1,15 +1,17 @@
 from typing import Any, Dict
 import json
 
-from fastapi import Body, HTTPException
+from fastapi import Body, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 
-from gateway.app import app, client, OLLAMA
+from gateway.settings import client, OLLAMA
 from gateway.swagger_models import  ChatGatewayResponse, ChatRequest, ChatOptions, \
     GenerateGatewayResponse, MessageRequest, MessageOptions
 
 
-@app.post(
+router = APIRouter(tags=["OLLAMA"])
+
+@router.post(
     "/chat",
     summary="Диалог с LLM (Ollama /api/chat)",
     description="Передай массив сообщений (system/user/assistant). Возвращает ответ Ollama в форме chat.",
@@ -29,7 +31,7 @@ async def chat(payload: ChatRequest = Body(...)):
     return JSONResponse(r.json())
 
 
-@app.post(
+@router.post(
     "/message",
     summary="Один запрос (prompt) к LLM (Ollama /api/generate)",
     description="Удобно для простых одношаговых запросов. Под капотом вызывает /api/generate.",

@@ -1,14 +1,15 @@
 import asyncio
 
 import httpx
-from fastapi import UploadFile, File, Form, HTTPException
+from fastapi import UploadFile, File, Form, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 
-from gateway.app import app, client, WHISPER
+from gateway.settings import client, WHISPER
 from gateway.swagger_models import STTResponse, Optional
 
+router = APIRouter(tags=["WHISPER"])
 
-@app.post(
+@router.post(
     "/stt",
     summary="Распознавание речи (Faster-Whisper)",
     description="Загрузи аудиофайл (multipart/form-data). Опционально укажи язык (например, ru).",

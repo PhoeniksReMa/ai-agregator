@@ -1,11 +1,13 @@
-from fastapi import Body, HTTPException
+from fastapi import Body, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 
-from gateway.app import app, client, COMFY
+from gateway.settings import client, COMFY
 from gateway.swagger_models import ComfyPayload
 
+router = APIRouter(tags=["COMFY"])
 
-@app.post(
+
+@router.post(
     "/image/raw",
     summary="Прямой прокси к ComfyUI /prompt",
     description="Передай готовый JSON для ComfyUI. Ответ возвращается как есть.",

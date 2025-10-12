@@ -1,11 +1,12 @@
-from fastapi import Body, HTTPException
+from fastapi import Body, HTTPException, APIRouter
 from fastapi.responses import Response
 
-from gateway.app import app, client, XTTS
+from gateway.settings import client, XTTS
 from gateway.swagger_models import TTSRequest
 
+router = APIRouter(tags=["TTS"])
 
-@app.post(
+@router.post(
     "/tts",
     summary="Синтез речи (XTTS v2)",
     description="Принимает JSON с текстом и опциональными параметрами. Возвращает аудио (audio/wav).",
