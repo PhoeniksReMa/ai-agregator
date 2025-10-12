@@ -49,13 +49,11 @@ services:
 
   gateway:
     build:
-      context: ./gateway           # <-- корень проекта
-      dockerfile: Dockerfile
-    restart: unless-stopped
+      context: .               # корень проекта
+      dockerfile: gateway/Dockerfile
+    working_dir: /app
     environment:
-      - OLLAMA_URL=http://ollama:11434
-      - XTTS_URL=http://xtts:8021
-      - WHISPER_URL=http://whisper:8022
-      - COMFY_URL=http://comfyui:8188
+      - PYTHONPATH=/app
+    restart: unless-stopped
     ports: ["8080:8080"]
     depends_on: [ollama, xtts, whisper, comfyui]
