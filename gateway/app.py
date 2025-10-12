@@ -66,7 +66,7 @@ class ChatRequest(BaseModel):
                     {"role": "user", "content": "Сформулируй правило трёх в одном предложении."}
                 ],
                 "stream": False,
-                "options": {"temperature": 0.5, "num_ctx": 8192}
+                "options": {"temperature": 0.5, "num_ctx": 2048, "num_predict": 256}
             }
         ]
     })
