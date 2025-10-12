@@ -1,5 +1,6 @@
 import os
 import asyncio
+from os import getenv
 from typing import Optional, Any, Dict, List, Literal
 import json
 import httpx
@@ -41,13 +42,14 @@ class ChatMessage(BaseModel):
 
 class ChatOptions(BaseModel):
     temperature: Optional[float] = Field(0.7, ge=0, le=2, description="Креативность")
-    num_ctx: Optional[int] = Field(8192, ge=256, description="Контекст (токены)")
+    num_ctx: Optional[int] = Field(2048, ge=256, description="Контекст (токены)")
+    num_predict: Optional[int] = Field(256, ge=256, description="Длинна вывода")
     top_p: Optional[float] = Field(None, ge=0, le=1)
     top_k: Optional[int] = Field(None, ge=0)
     repeat_penalty: Optional[float] = Field(None, ge=0)
 
 class ChatRequest(BaseModel):
-    model: Optional[str] = Field("qwen2.5:7b-instruct-q4_K_M", description="Ollama model tag")
+    model: Optional[str] = Field("qwen2.5:3b-instruct-q4_K_M", description="Ollama model tag")
     messages: List[ChatMessage] = Field(..., description="История диалога")
     stream: Optional[bool] = Field(False, description="Стриминговый ответ")
     options: Optional[ChatOptions] = Field(
