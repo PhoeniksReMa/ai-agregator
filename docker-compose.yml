@@ -49,8 +49,8 @@ services:
 
   gateway:
     build:
-      context: .            # <-- корень проекта
-      dockerfile: gateway/Dockerfile
+      context: ./gateway           # <-- корень проекта
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       - OLLAMA_URL=http://ollama:11434
