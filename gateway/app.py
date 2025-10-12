@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
+import json
+from fastapi.openapi.utils import get_openapi
 
 from gateway.servises import xtts, wisper, ollama, comfy
 
@@ -22,3 +24,11 @@ app.include_router(comfy.router)
 @app.get("/health")
 async def health():
     return {"ok": True}
+
+if __name__ == "__main__":
+    with open("openapi_test.json", "w", encoding="utf-8") as f:
+        json.dump(get_openapi(
+            title="Test",
+            version="1.0",
+            routes=app.routes,
+        ), f, ensure_ascii=False, indent=2)

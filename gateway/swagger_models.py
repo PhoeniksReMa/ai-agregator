@@ -23,10 +23,7 @@ class ChatRequest(BaseModel):
     model: Optional[str] = Field(model, description="Ollama model tag")
     messages: List[ChatMessage] = Field(..., description="История диалога")
     stream: Optional[bool] = Field(False, description="Стриминговый ответ")
-    options: Optional[ChatOptions] = Field(
-        default_factory=ChatOptions,
-        description="Параметры генерации"
-    )
+    options: ChatOptions = ChatOptions()
 
     model_config = ConfigDict(json_schema_extra={
         "examples": [
