@@ -60,7 +60,7 @@ class ChatRequest(BaseModel):
     model_config = ConfigDict(json_schema_extra={
         "examples": [
             {
-                "model": "qwen2.5:7b-instruct-q4_K_M",
+                "model": "qwen2.5:3b-instruct-q4_K_M",
                 "messages": [
                     {"role": "system", "content": "Ты — русскоязычный ассистент. Отвечай кратко."},
                     {"role": "user", "content": "Сформулируй правило трёх в одном предложении."}
@@ -86,7 +86,7 @@ class MessageOptions(BaseModel):
 
 class MessageRequest(BaseModel):
     prompt: str = Field(..., description="Текст запроса")
-    model: Optional[str] = Field("qwen2.5:7b-instruct-q4_K_M")
+    model: Optional[str] = Field("qwen2.5:3b-instruct-q4_K_M")
     system: Optional[str] = Field("Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно.")
     options: Optional[MessageOptions] = Field(default_factory=MessageOptions)
     stream: Optional[bool] = Field(False)
@@ -95,7 +95,7 @@ class MessageRequest(BaseModel):
         "examples": [
             {
                 "prompt": "Суммируй: 1) Сборка; 2) Тест; 3) Деплой — в одном абзаце.",
-                "model": "qwen2.5:7b-instruct-q4_K_M",
+                "model": "qwen2.5:3b-instruct-q4_K_M",
                 "system": "Ты — русскоязычный ассистент. Отвечай кратко.",
                 "options": {"temperature": 0.3, "top_p": 0.9, "repeat_penalty": 1.1},
                 "stream": False
@@ -138,7 +138,7 @@ class TTSRequest(BaseModel):
 )
 async def chat(payload: ChatRequest = Body(...)):
     body = {
-        "model": payload.model or "qwen2.5:7b-instruct-q4_K_M",
+        "model": payload.model or "qwen2.5:3b-instruct-q4_K_M",
         "messages": [m.model_dump() for m in payload.messages],
         "stream": bool(payload.stream),
         "options": (payload.options.model_dump() if payload.options else ChatOptions().model_dump()),
@@ -164,7 +164,7 @@ async def message(payload: MessageRequest = Body(...)):
     if not prompt:
         raise HTTPException(400, "Field 'prompt' is required")
 
-    model = payload.model or "qwen2.5:7b-instruct-q4_K_M"
+    model = payload.model or "qwen2.5:3b-instruct-q4_K_M"
     system = payload.system or "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
     options = (payload.options.model_dump() if payload.options else MessageOptions().model_dump())
     stream = bool(payload.stream)
