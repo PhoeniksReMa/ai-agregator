@@ -6,6 +6,9 @@ from fastapi.openapi.utils import get_openapi
 
 from gateway.servises import xtts, wisper, ollama, comfy
 
+import gateway.swagger_models as sm
+print("swagger_models loaded from:", sm.__file__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.http = httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0, read=120.0))
@@ -24,11 +27,3 @@ app.include_router(comfy.router)
 @app.get("/health")
 async def health():
     return {"ok": True}
-
-if __name__ == "__main__":
-    with open("openapi_test.json", "w", encoding="utf-8") as f:
-        json.dump(get_openapi(
-            title="Test",
-            version="1.0",
-            routes=app.routes,
-        ), f, ensure_ascii=False, indent=2)
