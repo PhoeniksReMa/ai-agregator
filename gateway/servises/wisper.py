@@ -1,9 +1,10 @@
 from fastapi import UploadFile, File, Form, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
+from typing import Optional
 
 from gateway.settings import WHISPER
 from gateway.dependencies import HttpDep
-from gateway.swagger_models import STTResponse, Optional
+from gateway.swagger_models import STTResponse
 
 router = APIRouter(tags=["WHISPER"])
 
