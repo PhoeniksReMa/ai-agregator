@@ -2,72 +2,67 @@ from typing import Any, Dict
 import json
 
 from fastapi import Body, HTTPException, APIRouter
-from fastapi.responses import JSONResponse
-
-from gateway.settings import client, OLLAMA
-from gateway.swagger_models import  ChatGatewayResponse, ChatRequest, ChatOptions, \
-    GenerateGatewayResponse, MessageRequest, MessageOptions
-
+from gateway.settings import OLLAMA
+from gateway.dependencies import HttpDep
+from gateway.swagger_models import (
+    ChatGatewayResponse, ChatRequest, ChatOptions,
+    GenerateGatewayResponse, MessageRequest, MessageOptions,
+)
 
 router = APIRouter(tags=["OLLAMA"])
+
 
 @router.post(
     "/chat",
     summary="Диалог с LLM (Ollama /api/chat)",
     description="Передай массив сообщений (system/user/assistant). Возвращает ответ Ollama в форме chat.",
-    tags=["LLM"],
     response_model=ChatGatewayResponse,
 )
-async def chat(payload: ChatRequest = Body(...)):
+async def chat(http: HttpDep, payload: ChatRequest = Body(...)):
     body = {
         "model": payload.model or "qwen2.5:3b-instruct-q4_K_M",
-        "messages": [m.model_dump() for m in payload.messages],
+        "messages": [m.model_dump(exclude_none=True) for m in payload.messages],
         "stream": bool(payload.stream),
-        "options": (payload.options.model_dump() if payload.options else ChatOptions().model_dump()),
+        "options": (payload.options.model_dump(exclude_none=True)
+                    if payload.options else ChatOptions().model_dump(exclude_none=True)),
     }
-    r = await client.post(f"{OLLAMA}/api/chat", json=body)
+    r = await http.post(f"{OLLAMA}/api/chat", json=body)
     if r.is_error:
         raise HTTPException(r.status_code, r.text)
-    return JSONResponse(r.json())
+    # FastAPI сам вернёт JSON
+    return r.json()
 
 
 @router.post(
     "/message",
     summary="Один запрос (prompt) к LLM (Ollama /api/generate)",
     description="Удобно для простых одношаговых запросов. Под капотом вызывает /api/generate.",
-    tags=["LLM"],
     response_model=GenerateGatewayResponse,
 )
-async def message(payload: MessageRequest = Body(...)):
-    prompt = payload.prompt
-    if not prompt:
+async def message(http: HttpDep, payload: MessageRequest = Body(...)):
+    if not payload.prompt:
         raise HTTPException(400, "Field 'prompt' is required")
 
     model = payload.model or "qwen2.5:3b-instruct-q4_K_M"
     system = payload.system or "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
-    options = (payload.options.model_dump() if payload.options else MessageOptions().model_dump())
+    options = (payload.options.model_dump(exclude_none=True)
+               if payload.options else MessageOptions().model_dump(exclude_none=True))
     stream = bool(payload.stream)
 
-    req = {
-        "model": model,
-        "prompt": prompt,
-        "system": system,
-        "options": options,
-        "stream": stream,
-    }
+    req = {"model": model, "prompt": payload.prompt, "system": system, "options": options, "stream": stream}
 
-    # non-stream: простой возврат JSON
+    # non-stream: обычный JSON-ответ
     if not stream:
-        r = await client.post(f"{OLLAMA}/api/generate", json=req)
+        r = await http.post(f"{OLLAMA}/api/generate", json=req)
         if r.is_error:
             raise HTTPException(r.status_code, r.text)
 
-        # Иногда Ollama может вернуть несколько JSON строк (редко) — склеим безопасно
         txt = r.text.strip()
+        # 1) нормальный JSON
         try:
-            data = json.loads(txt)
-            return JSONResponse(data)
+            return json.loads(txt)
         except json.JSONDecodeError:
+            # 2) редкий случай: несколько JSON-строк подряд
             response_text = ""
             done_obj: Dict[str, Any] = {}
             for line in txt.splitlines():
@@ -82,14 +77,15 @@ async def message(payload: MessageRequest = Body(...)):
                 except Exception:
                     continue
             if not response_text and not done_obj:
-                return JSONResponse({"raw": txt})
+                return {"raw": txt}
             merged = {"model": model, "response": response_text, "done": True}
             if done_obj:
                 merged.update({k: v for k, v in done_obj.items() if k not in merged})
-            return JSONResponse(merged)
+            return merged
 
-    # stream=true: агрегируем строки сервера и возвращаем итог
-    async with client.stream("POST", f"{OLLAMA}/api/generate", json=req) as resp:
+    # stream=true: читаем построчно и собираем итог
+    # (опц.) можно дать бесконечный таймаут на стрим: timeout=None
+    async with http.stream("POST", f"{OLLAMA}/api/generate", json=req) as resp:
         if resp.is_error:
             text = await resp.aread()
             raise HTTPException(resp.status_code, text.decode("utf-8", errors="ignore"))
@@ -108,4 +104,4 @@ async def message(payload: MessageRequest = Body(...)):
         merged = {"model": model, "response": response_text, "done": True}
         if done_obj:
             merged.update({k: v for k, v in done_obj.items() if k not in merged})
-        return JSONResponse(merged)
+        return merged

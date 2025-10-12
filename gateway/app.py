@@ -1,22 +1,24 @@
+from contextlib import asynccontextmanager
+import httpx
 from fastapi import FastAPI
-from settings import client
-from servises import comfy, ollama, wisper, xtts
 
-app = FastAPI(
-    title="Local AI Aggregator Gateway",
-    description="Шлюз к локальным сервисам: Ollama (LLM), Faster-Whisper (STT), XTTS (TTS), ComfyUI (image).",
-)
+from gateway.servises import xtts, wisper, ollama, comfy
 
-app.include_router(xtts.router, prefix="", tags=["TTS"])
-app.include_router(wisper.router, prefix="", tags=["STT"])
-app.include_router(ollama.router, prefix="", tags=["LLM"])
-app.include_router(comfy.router, prefix="", tags=["Image"])
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.http = httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0, read=120.0))
+    try:
+        yield
+    finally:
+        await app.state.http.aclose()
 
+app = FastAPI(title="Local AI Gateway", lifespan=lifespan)
 
-@app.on_event("shutdown")
-async def _shutdown():
-    await client.aclose()
+app.include_router(xtts.router)
+app.include_router(wisper.router)
+app.include_router(ollama.router)
+app.include_router(comfy.router)
 
-@app.get("/health", summary="Проверка здоровья", tags=["Service"])
+@app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"ok": True}
