@@ -1,9 +1,9 @@
 from fastapi import Body, HTTPException, APIRouter
 from fastapi.responses import Response
 
-from gateway.settings import XTTS
-from gateway.dependencies import HttpDep
-from gateway.swagger_models import TTSRequest
+from ..settings import XTTS
+from ..dependencies import HttpDep
+from ..swagger_models import TTSRequest
 
 router = APIRouter(tags=["TTS"])
 
