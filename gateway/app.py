@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 
-from gateway.servises import xtts, wisper, ollama, comfy
+from servises import xtts, wisper, ollama, comfy
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
