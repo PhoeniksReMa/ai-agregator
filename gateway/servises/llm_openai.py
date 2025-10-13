@@ -19,7 +19,6 @@ async def chat_complete(payload: OpenAIChatRequest):
         temperature=payload.temperature,
         top_p=payload.top_p,
         max_tokens=payload.max_tokens,
-        stream=payload.stream,
         **(payload.extra or {}),
     )
     return JSONResponse(content=response)

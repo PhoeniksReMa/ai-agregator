@@ -212,7 +212,6 @@ class OpenAIChatRequest(BaseModel):
     temperature: Optional[float] = Field(0.7, ge=0, le=2, description="Креативность")
     top_p: Optional[float] = Field(1.0, ge=0, le=1)
     max_tokens: Optional[int] = Field(None, description="Ограничение длины вывода")
-    stream: Optional[bool] = Field(False, description="Стриминговый ответ")
     extra: Optional[Dict[str, Any]] = Field(None, description="Дополнительные параметры OpenAI")
 
     model_config = ConfigDict(
@@ -224,8 +223,7 @@ class OpenAIChatRequest(BaseModel):
                         {"role": "system", "content": "Ты — умный ассистент, отвечай по-русски."},
                         {"role": "user", "content": "Объясни правило трёх в одном предложении."}
                     ],
-                    "temperature": 0.7,
-                    "stream": False
+                    "temperature": 0.7
                 }
             ]
         }
