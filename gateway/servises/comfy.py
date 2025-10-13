@@ -19,5 +19,4 @@ async def create_image_job(body: SimpleTxtRequest = Body(...)):
             detail = r.json() if "application/json" in ct else r.text
             raise HTTPException(status_code=r.status_code, detail=detail)
         responce = r.json()
-
         return {"url": f'{SERVER_URL}/history/{responce["prompt_id"]}'}
