@@ -17,7 +17,7 @@ router = APIRouter(tags=["OLLAMA"])
     summary="Диалог с LLM (Ollama /api/chat)",
     description="Передай массив сообщений (system/user/assistant). Возвращает ответ Ollama в форме chat.",
     tags=["OLLAMA"],
-    response_model=ChatGatewayResponse,
+    # response_model=ChatGatewayResponse,
 )
 async def chat(http: HttpDep, payload: ChatRequest = Body(...)):
     body = {
