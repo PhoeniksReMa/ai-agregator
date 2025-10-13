@@ -3,7 +3,7 @@ from typing import Optional, List, Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 
-DEFAULT_MODEL  = "qwen2.5:3b-instruct-q4_K_M"
+DEFAULT_MODEL  = "qwen2.5:3b-instruct-q5_K_M"
 
 Role = Literal["system", "user", "assistant"]
 
