@@ -16,14 +16,13 @@ services:
     build: ./xtts
     restart: unless-stopped
     environment:
-      - COQUI_TTS_CACHE=${XTTS_CACHE}
       - COQUI_TOS_AGREED=1
       - HF_HUB_ENABLE_HF_TRANSFER=0
       - HF_HUB_DISABLE_TELEMETRY=1
       - NVIDIA_VISIBLE_DEVICES=${GPU_TTS}
       - TTS_HOME=/data/tts
     volumes:
-      - ${XTTS_CACHE}:/root/.local/share/tts
+      - ${XTTS_CACHE}:/data/tts
     ports: ["8021:8021"]
     runtime: nvidia
 
