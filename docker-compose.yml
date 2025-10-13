@@ -12,32 +12,32 @@ services:
     ports: ["11434:11434"]
     runtime: nvidia
 
-  xtts:
-    build: ./xtts
-    restart: unless-stopped
-    environment:
-      - COQUI_TOS_AGREED=1
-      - HF_HUB_ENABLE_HF_TRANSFER=0
-      - HF_HUB_DISABLE_TELEMETRY=1
-      - NVIDIA_VISIBLE_DEVICES=${GPU_TTS}
-      - TTS_HOME=/data/tts
-    volumes:
-      - ${XTTS_CACHE}:/data/tts
-    ports: ["8021:8021"]
-    runtime: nvidia
+#  xtts:
+#    build: ./xtts
+#    restart: unless-stopped
+#    environment:
+#      - COQUI_TOS_AGREED=1
+#      - HF_HUB_ENABLE_HF_TRANSFER=0
+#      - HF_HUB_DISABLE_TELEMETRY=1
+#      - NVIDIA_VISIBLE_DEVICES=${GPU_TTS}
+#      - TTS_HOME=/data/tts
+#    volumes:
+#      - ${XTTS_CACHE}:/data/tts
+#    ports: ["8021:8021"]
+#    runtime: nvidia
 
-  whisper:
-    build: ./whisper
-    restart: unless-stopped
-    environment:
-      - WHISPER_CACHE=${WHISPER_CACHE}
-      - HF_HUB_ENABLE_HF_TRANSFER=0
-      - HF_HUB_DISABLE_TELEMETRY=1
-      - NVIDIA_VISIBLE_DEVICES=${GPU_WHISPER}
-    volumes:
-      - ${WHISPER_CACHE}:/root/.cache
-    ports: ["8022:8022"]
-    runtime: nvidia
+#  whisper:
+#    build: ./whisper
+#    restart: unless-stopped
+#    environment:
+#      - WHISPER_CACHE=${WHISPER_CACHE}
+#      - HF_HUB_ENABLE_HF_TRANSFER=0
+#      - HF_HUB_DISABLE_TELEMETRY=1
+#      - NVIDIA_VISIBLE_DEVICES=${GPU_WHISPER}
+#    volumes:
+#      - ${WHISPER_CACHE}:/root/.cache
+#    ports: ["8022:8022"]
+#    runtime: nvidia
 
   comfyui:
     build: ./comfyui

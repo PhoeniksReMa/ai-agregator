@@ -1,4 +1,4 @@
-from typing import Optional, List, Literal, Dict, Any
+from typing import Optional, List, Literal, Dict, Any, Union
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -110,13 +110,11 @@ class STTResponse(BaseModel):
 
 
 class TTSRequest(BaseModel):
-    text: str = Field(
-        ..., json_schema_extra={"examples": ["Привет! Это проверочный синтез речи."]}
-    )
-    language: Optional[str] = Field("ru", json_schema_extra={"examples": ["ru"]})
-    speaker_wav: Optional[str] = Field(
-        None, description="URL/путь до эталонного голоса (если поддерживается)"
-    )
+    text: str
+    speaker: Optional[str] = None
+    speaker_wav: Optional[Union[str, List[str]]] = None
+    language: Optional[str] = "ru"
+    out_path: Optional[str] = "/tmp/out.wav"
 
 class ComfyNode(BaseModel):
     class_type: str
