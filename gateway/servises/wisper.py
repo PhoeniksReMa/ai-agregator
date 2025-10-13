@@ -12,7 +12,7 @@ router = APIRouter(tags=["WHISPER"])
     "/stt",
     summary="Распознавание речи (Faster-Whisper)",
     description="Загрузи аудиофайл (multipart/form-data). Опционально укажи язык (например, ru).",
-    tags=["STT"],
+    tags=["WHISPER"],
     response_model=STTResponse,
 )
 async def stt(http: HttpDep, file: UploadFile = File(...), language: Optional[str] = Form(None)):
