@@ -1,7 +1,12 @@
 from typing import Optional, List, Literal, Dict, Any, Union
+import secrets
 
 from pydantic import BaseModel, Field, ConfigDict
-
+from gateway.settings import (
+    IMG_WIDTH, IMG_HEIGHT, IMG_BATCH, IMG_STEPS, IMG_CFG,
+    IMG_SAMPLER, IMG_SCHED, IMG_DENOISE, IMG_CKPT, IMG_CLIP_LAYER,
+    IMG_PREFIX, NEGATIVE_DEFAULT
+)
 
 
 DEFAULT_MODEL  = "qwen2.5:3b-instruct-q5_K_M"
@@ -109,102 +114,54 @@ class ComfyPayload(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-# Простой внешний запрос (то, что шлёт пользователь)
-class Text2ImageRequest(BaseModel):
-    prompt: str = Field(..., description="Позитивный текстовый промпт")
-    negative: Optional[str] = Field("", description="Негативный промпт")
-    width: int = Field(768, ge=64, multiple_of=8, description="Ширина")
-    height: int = Field(768, ge=64, multiple_of=8, description="Высота")
-    batch_size: int = Field(1, ge=1, le=8, description="Размер батча")
-    steps: int = Field(20, ge=1, le=100, description="Шаги диффузии")
-    cfg: float = Field(7.0, ge=0, le=30, description="Guidance scale")
-    sampler_name: str = Field("dpmpp_2m", description="Сэмплер (euler, dpmpp_2m, ...)")
-    scheduler: str = Field("karras", description="Планировщик (normal, karras, ...)")
-    denoise: float = Field(1.0, ge=0.0, le=1.0, description="Сила денойза")
-    seed: int = Field(-1, description="Сид (-1 = случайный на стороне Comfy)")
-    # Технические настройки (оставляем по умолчанию, но можно переопределить)
-    ckpt_name: str = Field("sd_xl_base_1.0.safetensors", description="Чекпоинт")
-    stop_at_clip_layer: int = Field(-2, description="CLIP слой для SDXL")
-    filename_prefix: str = Field("comfy_out", description="Префикс сохранения")
+class SimpleTxtRequest(BaseModel):
+    text: str = Field(..., description="Позитивный текстовый промпт")
     client_id: Optional[str] = Field(None, description="ID клиента/сессии")
-    extra_data: Optional[Dict[str, Any]] = Field(
-        None, description="Метаданные, попадут в extra_pnginfo"
-    )
+    # опционально — можно не показывать на фронте, но оставить хук:
+    meta: Optional[Dict[str, Any]] = None  # попадёт в extra_pnginfo
 
-def build_comfy_payload(req: Text2ImageRequest) -> ComfyPayload:
-    """
-    Собирает базовый SDXL txt2img граф под ComfyUI из простого запроса пользователя.
-    """
-    nodes: Dict[str, ComfyNode] = {
-        # 4 — грузим SDXL Base: даёт (0) UNet, (1) CLIP, (2) VAE
-        "4": ComfyNode(
-            class_type="CheckpointLoaderSimple",
-            inputs={"ckpt_name": req.ckpt_name},
-        ),
-        # 5 — настраиваем CLIP слой (для SDXL обычно -2)
-        "5": ComfyNode(
-            class_type="CLIPSetLastLayer",
-            inputs={"clip": ["4", 1], "stop_at_clip_layer": req.stop_at_clip_layer},
-        ),
-        # 2 — позитивный промпт
-        "2": ComfyNode(
-            class_type="CLIPTextEncode",
-            inputs={"clip": ["5", 0], "text": req.prompt},
-        ),
-        # 6 — негативный промпт
-        "6": ComfyNode(
-            class_type="CLIPTextEncode",
-            inputs={"clip": ["5", 0], "text": req.negative or ""},
-        ),
-        # 1 — пустой латент нужного размера
-        "1": ComfyNode(
-            class_type="EmptyLatentImage",
-            inputs={
-                "batch_size": req.batch_size,
-                "height": req.height,
-                "width": req.width,
-            },
-        ),
-        # 3 — диффузия
-        "3": ComfyNode(
-            class_type="KSampler",
-            inputs={
-                "seed": req.seed,
-                "steps": req.steps,
-                "cfg": req.cfg,
-                "sampler_name": req.sampler_name,
-                "scheduler": req.scheduler,
-                "denoise": req.denoise,
-                "model": ["4", 0],       # UNet
-                "positive": ["2", 0],    # + prompt
-                "negative": ["6", 0],    # - prompt
-                "latent_image": ["1", 0] # стартовый латент
-            },
-        ),
-        # 7 — декодим в пиксели
-        "7": ComfyNode(
-            class_type="VAEDecode",
-            inputs={"samples": ["3", 0], "vae": ["4", 2]},
-        ),
-        # 8 — сохраняем (если вы сохраняете на стороне Comfy)
-        "8": ComfyNode(
-            class_type="SaveImage",
-            inputs={"images": ["7", 0], "filename_prefix": req.filename_prefix},
-        ),
+def _rand_seed() -> int:
+    # Comfy валидирует seed >= 0
+    return secrets.randbelow(2**31 - 1)
+
+def build_simple_comfy_payload(text: str, client_id: str | None, meta: Dict[str, Any] | None) -> Dict[str, Any]:
+    seed_val = _rand_seed()
+
+    nodes: Dict[str, Any] = {
+        "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": IMG_CKPT}},
+        "5": {"class_type": "CLIPSetLastLayer", "inputs": {"clip": ["4", 1], "stop_at_clip_layer": IMG_CLIP_LAYER}},
+        "2": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["5", 0], "text": text}},
+        "6": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["5", 0], "text": NEGATIVE_DEFAULT}},
+        "1": {"class_type": "EmptyLatentImage", "inputs": {
+            "batch_size": IMG_BATCH, "height": IMG_HEIGHT, "width": IMG_WIDTH
+        }},
+        "3": {"class_type": "KSampler", "inputs": {
+            "seed": seed_val,
+            "steps": IMG_STEPS,
+            "cfg": IMG_CFG,
+            "sampler_name": IMG_SAMPLER,
+            "scheduler": IMG_SCHED,
+            "denoise": IMG_DENOISE,
+            "model": ["4", 0],
+            "positive": ["2", 0],
+            "negative": ["6", 0],
+            "latent_image": ["1", 0],
+        }},
+        "7": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["4", 2]}},
+        "8": {"class_type": "SaveImage", "inputs": {"images": ["7", 0], "filename_prefix": IMG_PREFIX}},
     }
 
-    extra = req.extra_data or {}
-    # Запишем исходный запрос в метаданные — удобно для отладки
-    extra_pnginfo = extra.get("extra_pnginfo", {})
-    extra_pnginfo.setdefault("workflow", {})
-    extra_pnginfo["request"] = req.model_dump()
-    extra["extra_pnginfo"] = extra_pnginfo
+    extra = {"extra_pnginfo": {"workflow": {"request": {
+        "text": text, "seed_effective": seed_val
+    }}}}
+    if meta:
+        extra["extra_pnginfo"]["workflow"]["meta"] = meta
 
-    return ComfyPayload(
-        client_id=req.client_id,
-        prompt=nodes,
-        extra_data=extra,
-    )
+    return {
+        "client_id": client_id,
+        "prompt": nodes,
+        "extra_data": extra
+    }
 
 
 class OpenAIMessage(BaseModel):
