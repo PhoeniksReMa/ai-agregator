@@ -117,15 +117,9 @@ class ComfyPayload(BaseModel):
 class SimpleTxtRequest(BaseModel):
     text: str = Field(..., description="Позитивный текстовый промпт")
     client_id: Optional[str] = Field(None, description="ID клиента/сессии")
-    # опционально — можно не показывать на фронте, но оставить хук:
-    meta: Optional[Dict[str, Any]] = None  # попадёт в extra_pnginfo
 
-def _rand_seed() -> int:
-    # Comfy валидирует seed >= 0
-    return secrets.randbelow(2**31 - 1)
 
-def build_simple_comfy_payload(text: str, client_id: str | None, meta: Dict[str, Any] | None) -> Dict[str, Any]:
-    seed_val = _rand_seed()
+def build_simple_comfy_payload(text: str, client_id: str | None) -> Dict[str, Any]:
 
     nodes: Dict[str, Any] = {
         "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": IMG_CKPT}},
@@ -136,7 +130,6 @@ def build_simple_comfy_payload(text: str, client_id: str | None, meta: Dict[str,
             "batch_size": IMG_BATCH, "height": IMG_HEIGHT, "width": IMG_WIDTH
         }},
         "3": {"class_type": "KSampler", "inputs": {
-            "seed": seed_val,
             "steps": IMG_STEPS,
             "cfg": IMG_CFG,
             "sampler_name": IMG_SAMPLER,
@@ -151,16 +144,9 @@ def build_simple_comfy_payload(text: str, client_id: str | None, meta: Dict[str,
         "8": {"class_type": "SaveImage", "inputs": {"images": ["7", 0], "filename_prefix": IMG_PREFIX}},
     }
 
-    extra = {"extra_pnginfo": {"workflow": {"request": {
-        "text": text, "seed_effective": seed_val
-    }}}}
-    if meta:
-        extra["extra_pnginfo"]["workflow"]["meta"] = meta
-
     return {
         "client_id": client_id,
         "prompt": nodes,
-        "extra_data": extra
     }
 
 
