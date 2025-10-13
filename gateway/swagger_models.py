@@ -1,6 +1,7 @@
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, Set, Dict, Any
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
+
 
 
 DEFAULT_MODEL  = "qwen2.5:3b-instruct-q5_K_M"
@@ -125,21 +126,29 @@ class TTSRequest(BaseModel):
         None, description="URL/путь до эталонного голоса (если поддерживается)"
     )
 
+OUTPUT_NODE_CLASSES: Set[str] = {"SaveImage", "PreviewImage", "websocket_image_save"}
 
 class ComfyPayload(BaseModel):
-    model_config = ConfigDict(
-        extra="allow",
-        json_schema_extra={
-            "examples": [
-                {
-                    "prompt": {
-                        "3": {
-                            "inputs": {"text": "Astronaut riding a horse", "clip": ["5", 0]},
-                            "class_type": "CLIPTextEncode",
-                        },
-                        # ...
-                    }
-                }
-            ]
-        },
+    client_id: Optional[str] = Field(None, description="Любая строка-клиент, рекомендуется задавать")
+    prompt: Dict[str, Dict[str, Any]] = Field(
+        ..., description="Граф ComfyUI: словарь узлов {node_id: {class_type, inputs, ...}}"
     )
+    extra_data: Optional[Dict[str, Any]] = Field(
+        None, description="Необязательные метаданные (например extra_pnginfo/workflow)"
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+    @model_validator(mode="after")
+    def _has_output_node(self) -> "ComfyPayload":
+        # если знаете точные выходные классы — проверьте их наличие
+        has_output = any(
+            (node.get("class_type") in OUTPUT_NODE_CLASSES)
+            for node in (self.prompt or {}).values()
+        )
+        if not has_output:
+            raise ValueError(
+                "Prompt has no outputs: добавьте узел-выход (SaveImage/PreviewImage/"
+                "или ваш websocket_image_save) и подключите к нему изображения."
+            )
+        return self
