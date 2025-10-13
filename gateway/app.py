@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 
-from gateway.servises import xtts, wisper, ollama, comfy
+from gateway.servises import xtts, wisper, ollama, comfy, llm_openai
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -18,6 +18,7 @@ app.include_router(xtts.router)
 app.include_router(wisper.router)
 app.include_router(ollama.router)
 app.include_router(comfy.router)
+app.include_router(llm_openai.router)
 
 @app.get("/health")
 async def health():

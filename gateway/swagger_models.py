@@ -1,12 +1,12 @@
-from typing import Optional, List, Literal, Set, Dict, Any
+from typing import Optional, List, Literal, Dict, Any
 
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, ConfigDict
 
 
 
 DEFAULT_MODEL  = "qwen2.5:3b-instruct-q5_K_M"
 
-Role = Literal["system", "user", "assistant"]
+Role = Literal["system", "user", "assistant", "developer"]
 
 
 class ChatMessage(BaseModel):
@@ -199,4 +199,34 @@ class ComfyPayload(BaseModel):
                 }
             ]
         },
+    )
+
+
+class OpenAIMessage(BaseModel):
+    role: Role = Field(..., examples=["user"])
+    content: str = Field(..., examples=["Hello! Who are you?"])
+
+class OpenAIChatRequest(BaseModel):
+    model: str = Field(..., description="Модель OpenAI (например 'gpt-4o-mini')")
+    messages: List[OpenAIMessage] = Field(..., description="История диалога")
+    temperature: Optional[float] = Field(0.7, ge=0, le=2, description="Креативность")
+    top_p: Optional[float] = Field(1.0, ge=0, le=1)
+    max_tokens: Optional[int] = Field(None, description="Ограничение длины вывода")
+    stream: Optional[bool] = Field(False, description="Стриминговый ответ")
+    extra: Optional[Dict[str, Any]] = Field(None, description="Дополнительные параметры OpenAI")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "model": "gpt-4o-mini",
+                    "messages": [
+                        {"role": "system", "content": "Ты — умный ассистент, отвечай по-русски."},
+                        {"role": "user", "content": "Объясни правило трёх в одном предложении."}
+                    ],
+                    "temperature": 0.7,
+                    "stream": False
+                }
+            ]
+        }
     )
