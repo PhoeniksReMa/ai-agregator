@@ -41,7 +41,7 @@ async def chat(http: HttpDep, payload: ChatRequest = Body(...)):
     tags=["OLLAMA"],
     response_model=GenerateGatewayResponse,
 )
-async def message(http: HttpDep, payload):
+async def message(http: HttpDep, payload: MessageRequest = Body(...)):
     if not payload.prompt:
         raise HTTPException(400, "Field 'prompt' is required")
 

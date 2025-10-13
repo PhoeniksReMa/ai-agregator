@@ -67,7 +67,7 @@ class MessageOptions(BaseModel):
 
 class MessageRequest(BaseModel):
     prompt: str = Field(..., description="Текст запроса")
-    model: Optional[str] = Field(model)
+    # model: Optional[str] = Field(model)
     system: Optional[str] = Field(
         "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
     )
