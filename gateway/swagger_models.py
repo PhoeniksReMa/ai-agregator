@@ -45,7 +45,6 @@ class ChatRequest(BaseModel):
                         },
                     ],
                     "stream": False,
-                    "options": {"temperature": 0.5, "num_ctx": 2048, "num_predict": 256},
                 }
             ]
         }
@@ -56,7 +55,6 @@ class ChatGatewayResponse(BaseModel):
     model: Optional[str] = None
     done: Optional[bool] = None
     message: Optional[ChatMessage] = None
-
     model_config = ConfigDict(extra="allow")
 
 
@@ -72,7 +70,6 @@ class MessageRequest(BaseModel):
     system: Optional[str] = Field(
         "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
     )
-    # Важно: без Optional и без default_factory
     options: MessageOptions = MessageOptions()
     stream: Optional[bool] = Field(False)
 
@@ -83,11 +80,6 @@ class MessageRequest(BaseModel):
                     "prompt": "Суммируй: 1) Сборка; 2) Тест; 3) Деплой — в одном абзаце.",
                     "model": DEFAULT_MODEL,
                     "system": "Ты — русскоязычный ассистент. Отвечай кратко.",
-                    "options": {
-                        "temperature": 0.3,
-                        "top_p": 0.9,
-                        "repeat_penalty": 1.1,
-                    },
                     "stream": False,
                 }
             ]

@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import tempfile, os
+from fastapi.responses import FileResponse, JSONResponse
 from TTS.api import TTS
-from fastapi.responses import FileResponse
+import tempfile, os
+import torch
 
 app = FastAPI()
 _model = None
@@ -10,14 +11,22 @@ _model = None
 def get_model():
     global _model
     if _model is None:
-        # скачает xtts_v2 при первом запуске
-        _model = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2", gpu=True)
+        use_gpu = torch.cuda.is_available()
+        _model = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2", gpu=use_gpu)
     return _model
 
 class TTSIn(BaseModel):
     text: str
-    speaker_wav: str | None = None   # путь к эталонному голосу (опционально)
-    language: str = "ru"             # "en","ru",...
+    speaker_wav: str | None = None
+    language: str = "ru"
+
+@app.get("/health")
+def health():
+    try:
+        m = get_model()
+        return {"status": "ok", "cuda": torch.cuda.is_available(), "cuda_version": torch.version.cuda}
+    except Exception as e:
+        return JSONResponse({"status": "error", "detail": str(e)}, status_code=500)
 
 @app.post("/tts")
 def tts(inp: TTSIn):
