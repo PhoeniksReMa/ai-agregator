@@ -39,7 +39,7 @@ async def chat(http: HttpDep, payload: ChatRequest = Body(...)):
     summary="Один запрос (prompt) к LLM (Ollama /api/generate)",
     description="Удобно для простых одношаговых запросов. Под капотом вызывает /api/generate.",
     tags=["OLLAMA"],
-    response_model=GenerateGatewayResponse,
+    # response_model=GenerateGatewayResponse,
 )
 async def message(http: HttpDep, payload: MessageRequest = Body(...)):
     if not payload.prompt:

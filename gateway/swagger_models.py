@@ -23,10 +23,9 @@ class ChatOptions(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    model: Optional[str] = Field(model, description="Ollama model tag")
+    model: Optional[str] = Field("qwen2.5:3b-instruct-q4_K_M", description="Ollama model tag")
     messages: List[ChatMessage] = Field(..., description="История диалога")
     stream: Optional[bool] = Field(False, description="Стриминговый ответ")
-    # Важно: без default_factory и без Optional — стабильнее для OpenAPI
     options: ChatOptions = ChatOptions()
 
     model_config = ConfigDict(
@@ -68,7 +67,7 @@ class MessageOptions(BaseModel):
 
 class MessageRequest(BaseModel):
     prompt: str = Field(..., description="Текст запроса")
-    model: Optional[str] = Field(model)
+    model: Optional[str] = Field("qwen2.5:3b-instruct-q4_K_M")
     system: Optional[str] = Field(
         "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
     )
