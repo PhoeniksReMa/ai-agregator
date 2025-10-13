@@ -3,7 +3,7 @@ from typing import Optional, List, Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 
-model = "qwen2.5:3b-instruct-q4_K_M"
+DEFAULT_MODEL  = "qwen2.5:3b-instruct-q4_K_M"
 
 Role = Literal["system", "user", "assistant"]
 
@@ -23,7 +23,7 @@ class ChatOptions(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    # model: Optional[str] = Field(model, description="Ollama model tag")
+    model: Optional[str] = Field(DEFAULT_MODEL, description="Ollama model tag")
     messages: List[ChatMessage] = Field(..., description="История диалога")
     stream: Optional[bool] = Field(False, description="Стриминговый ответ")
     options: ChatOptions = ChatOptions()
@@ -32,7 +32,7 @@ class ChatRequest(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "model": model,
+                    "model": DEFAULT_MODEL,
                     "messages": [
                         {
                             "role": "system",
@@ -67,7 +67,7 @@ class MessageOptions(BaseModel):
 
 class MessageRequest(BaseModel):
     prompt: str = Field(..., description="Текст запроса")
-    # model: Optional[str] = Field(model)
+    model: Optional[str] = Field(DEFAULT_MODEL)
     system: Optional[str] = Field(
         "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
     )
@@ -80,7 +80,7 @@ class MessageRequest(BaseModel):
             "examples": [
                 {
                     "prompt": "Суммируй: 1) Сборка; 2) Тест; 3) Деплой — в одном абзаце.",
-                    "model": model,
+                    "model": DEFAULT_MODEL,
                     "system": "Ты — русскоязычный ассистент. Отвечай кратко.",
                     "options": {
                         "temperature": 0.3,
