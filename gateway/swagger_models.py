@@ -125,30 +125,78 @@ class TTSRequest(BaseModel):
     speaker_wav: Optional[str] = Field(
         None, description="URL/путь до эталонного голоса (если поддерживается)"
     )
-
-OUTPUT_NODE_CLASSES: Set[str] = {"SaveImage", "PreviewImage", "websocket_image_save"}
-
-class ComfyPayload(BaseModel):
-    client_id: Optional[str] = Field(None, description="Любая строка-клиент, рекомендуется задавать")
-    prompt: Dict[str, Dict[str, Any]] = Field(
-        ..., description="Граф ComfyUI: словарь узлов {node_id: {class_type, inputs, ...}}"
-    )
-    extra_data: Optional[Dict[str, Any]] = Field(
-        None, description="Необязательные метаданные (например extra_pnginfo/workflow)"
+class ComfyNode(BaseModel):
+    class_type: str = Field(..., description="Имя класса узла ComfyUI, напр. SaveImage")
+    inputs: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Входные параметры узла. Значения могут быть примитивами или ссылками вида ['<node_id>', <out_idx>]"
     )
 
     model_config = ConfigDict(extra="allow")
 
-    @model_validator(mode="after")
-    def _has_output_node(self) -> "ComfyPayload":
-        # если знаете точные выходные классы — проверьте их наличие
-        has_output = any(
-            (node.get("class_type") in OUTPUT_NODE_CLASSES)
-            for node in (self.prompt or {}).values()
-        )
-        if not has_output:
-            raise ValueError(
-                "Prompt has no outputs: добавьте узел-выход (SaveImage/PreviewImage/"
-                "или ваш websocket_image_save) и подключите к нему изображения."
-            )
-        return self
+class ComfyPayload(BaseModel):
+    client_id: Optional[str] = Field(None, description="Произвольный идентификатор клиента/сессии")
+    # ВАЖНО: теперь prompt — словарь {<node_id>: ComfyNode}
+    prompt: Dict[str, ComfyNode] = Field(..., description="Граф ComfyUI")
+    extra_data: Optional[Dict[str, Any]] = Field(
+        None, description="Доп. метаданные (например extra_pnginfo/workflow)"
+    )
+
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
+            "examples": [
+                {
+                    "client_id": "demo-client",
+                    "prompt": {
+                        "1": {
+                            "class_type": "EmptyLatentImage",
+                            "inputs": {"width": 512, "height": 512, "batch_size": 1}
+                        },
+                        "2": {
+                            "class_type": "CLIPTextEncode",
+                            "inputs": {"text": "Astronaut riding a horse", "clip": ["5", 0]}
+                        },
+                        "3": {
+                            "class_type": "KSampler",
+                            "inputs": {
+                                "seed": 123456789,
+                                "steps": 20,
+                                "cfg": 7,
+                                "sampler_name": "euler",
+                                "scheduler": "normal",
+                                "denoise": 1.0,
+                                "model": ["4", 0],
+                                "positive": ["2", 0],
+                                "negative": ["6", 0],
+                                "latent_image": ["1", 0]
+                            }
+                        },
+                        "4": {
+                            "class_type": "CheckpointLoaderSimple",
+                            "inputs": {"ckpt_name": "sd_xl_base_1.0.safetensors"}
+                        },
+                        "5": {
+                            "class_type": "CLIPSetLastLayer",
+                            "inputs": {"stop_at_clip_layer": -2, "clip": ["4", 1]}
+                        },
+                        "6": {
+                            "class_type": "CLIPTextEncode",
+                            "inputs": {"text": "", "clip": ["5", 0]}
+                        },
+                        "7": {
+                            "class_type": "VAEDecode",
+                            "inputs": {"samples": ["3", 0], "vae": ["4", 2]}
+                        },
+                        "8": {
+                            "class_type": "SaveImage",
+                            "inputs": {"images": ["7", 0], "filename_prefix": "comfy_out"}
+                        }
+                    },
+                    "extra_data": {
+                        "extra_pnginfo": {"workflow": {}}
+                    }
+                }
+            ]
+        },
+    )
