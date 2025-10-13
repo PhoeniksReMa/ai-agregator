@@ -19,7 +19,7 @@ router = APIRouter(tags=["OLLAMA"])
     tags=["OLLAMA"],
     response_model=ChatGatewayResponse,
 )
-async def chat(http: HttpDep, payload: ChatRequest = Body(...)):
+async def chat(http: HttpDep, payload):
     body = {
         "model": payload.model or "qwen2.5:3b-instruct-q4_K_M",
         "messages": [m.model_dump(exclude_none=True) for m in payload.messages],
@@ -41,7 +41,7 @@ async def chat(http: HttpDep, payload: ChatRequest = Body(...)):
     tags=["OLLAMA"],
     response_model=GenerateGatewayResponse,
 )
-async def message(http: HttpDep, payload):
+async def message(http: HttpDep, payload: MessageRequest = Body(...)):
     if not payload.prompt:
         raise HTTPException(400, "Field 'prompt' is required")
 
