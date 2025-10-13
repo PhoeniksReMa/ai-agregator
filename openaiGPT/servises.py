@@ -1,8 +1,8 @@
 import os
 import openai
 
-API_KEY = os.getenv("API_KEY")
-client = openai.OpenAI(api_key=API_KEY)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 class OpenAiAPIServise:
     def __init__(self):
