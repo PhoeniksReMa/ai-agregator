@@ -33,3 +33,16 @@ def health():
         return {"status": "ok", "model": _model_name, "compute": _compute, "device": str(dev)}
     except Exception as e:
         return JSONResponse({"status": "error", "detail": str(e)}, status_code=500)
+
+@app.post("/transcribe")
+async def transcribe(file: UploadFile = File(...), language: str = Form(None)):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=file.filename) as tmp:
+        tmp.write(await file.read())
+        path = tmp.name
+    try:
+        segments, info = get_model().transcribe(path, language=language)
+        text = "".join(s.text for s in segments)
+        return {"text": text, "language": getattr(info, "language", language)}
+    finally:
+        try: os.remove(path)
+        except: pass

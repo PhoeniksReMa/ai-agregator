@@ -1,8 +1,9 @@
-from fastapi import Body, HTTPException, APIRouter
+from fastapi import APIRouter
 
 from gateway.settings import COMFY
-from gateway.dependencies import HttpDep
-from gateway.swagger_models import ComfyPayload
+from gateway.swagger_models import Text2ImageRequest, ComfyPayload, build_comfy_payload
+from fastapi.responses import JSONResponse
+import httpx
 
 router = APIRouter(tags=["COMFY"])
 
@@ -12,8 +13,10 @@ router = APIRouter(tags=["COMFY"])
     summary="Прямой прокси к ComfyUI /prompt",
     description="Передай готовый JSON для ComfyUI. Ответ возвращается как JSON ComfyUI.",
 )
-async def comfy_raw(http: HttpDep, payload: ComfyPayload = Body(...)):
-    r = await http.post(f"{COMFY}/prompt", json=payload.model_dump(exclude_none=True))
-    if r.is_error:
-        raise HTTPException(status_code=r.status_code, detail=r.text)
-    return r.json()
+async def txt2img(req: Text2ImageRequest):
+    payload: ComfyPayload = build_comfy_payload(req)
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        r = await client.post(f"{COMFY}/prompt", json=payload.model_dump(mode="json"))
+        r.raise_for_status()
+        return JSONResponse(content=r.json())
