@@ -1,5 +1,5 @@
 from typing import Optional, List, Literal, Dict, Any, Union
-import secrets
+import random
 
 from pydantic import BaseModel, Field, ConfigDict
 from gateway.settings import (
@@ -130,6 +130,7 @@ def build_simple_comfy_payload(text: str, client_id: str | None) -> Dict[str, An
             "batch_size": IMG_BATCH, "height": IMG_HEIGHT, "width": IMG_WIDTH
         }},
         "3": {"class_type": "KSampler", "inputs": {
+            "seed": random.randint(0, 99999),
             "steps": IMG_STEPS,
             "cfg": IMG_CFG,
             "sampler_name": IMG_SAMPLER,
