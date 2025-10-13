@@ -95,26 +95,26 @@ class GenerateGatewayResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class STTSegment(BaseModel):
-    start: float
-    end: float
-    text: str
+# class STTSegment(BaseModel):
+#     start: float
+#     end: float
+#     text: str
 
 
-class STTResponse(BaseModel):
-    language: Optional[str] = Field(None, description="Детектированный язык (если есть)")
-    text: str = Field(..., description="Итоговая транскрипция")
-    segments: Optional[List[STTSegment]] = Field(
-        None, description="Сегменты (если возвращаются)"
-    )
+# class STTResponse(BaseModel):
+#     language: Optional[str] = Field(None, description="Детектированный язык (если есть)")
+#     text: str = Field(..., description="Итоговая транскрипция")
+#     segments: Optional[List[STTSegment]] = Field(
+#         None, description="Сегменты (если возвращаются)"
+#     )
 
 
-class TTSRequest(BaseModel):
-    text: str
-    speaker: Optional[str] = None
-    speaker_wav: Optional[Union[str, List[str]]] = None
-    language: Optional[str] = "ru"
-    out_path: Optional[str] = "/tmp/out.wav"
+# class TTSRequest(BaseModel):
+#     text: str
+#     speaker: Optional[str] = None
+#     speaker_wav: Optional[Union[str, List[str]]] = None
+#     language: Optional[str] = "ru"
+#     out_path: Optional[str] = "/tmp/out.wav"
 
 class ComfyNode(BaseModel):
     class_type: str
