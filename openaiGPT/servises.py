@@ -14,5 +14,5 @@ class OpenAiAPIServise:
             messages=messages,
             **settings
         )
-        completion = response.parse()
+        completion = response.choices[0].message
         return completion
