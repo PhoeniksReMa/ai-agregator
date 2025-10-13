@@ -22,4 +22,4 @@ async def chat_complete(payload: OpenAIChatRequest):
         stream=payload.stream,
         **(payload.extra or {}),
     )
-    return JSONResponse(response)
+    return JSONResponse(content=response)

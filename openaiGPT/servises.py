@@ -15,4 +15,4 @@ class OpenAiAPIServise:
             **settings
         )
         completion = response.choices[0].message
-        return completion
+        return completion.model_dump()
