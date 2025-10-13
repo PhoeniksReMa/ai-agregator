@@ -24,8 +24,8 @@ async def chat(http: HttpDep, payload: ChatRequest = Body(...)):
         "model": payload.model or "qwen2.5:3b-instruct-q4_K_M",
         "messages": [m.model_dump(exclude_none=True) for m in payload.messages],
         "stream": bool(payload.stream),
-        "options": (payload.options.model_dump(exclude_none=True)
-                    if payload.options else ChatOptions().model_dump(exclude_none=True)),
+        # "options": (payload.options.model_dump(exclude_none=True)
+        #             if payload.options else ChatOptions().model_dump(exclude_none=True)),
     }
     r = await http.post(f"{OLLAMA}/api/chat", json=body)
     if r.is_error:
@@ -47,11 +47,13 @@ async def message(http: HttpDep, payload: MessageRequest = Body(...)):
 
     model = payload.model or "qwen2.5:3b-instruct-q4_K_M"
     system = payload.system or "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
-    options = (payload.options.model_dump(exclude_none=True)
-               if payload.options else MessageOptions().model_dump(exclude_none=True))
+    # options = (payload.options.model_dump(exclude_none=True)
+    #            if payload.options else MessageOptions().model_dump(exclude_none=True))
     stream = bool(payload.stream)
 
-    req = {"model": model, "prompt": payload.prompt, "system": system, "options": options, "stream": stream}
+    req = {"model": model, "prompt": payload.prompt, "system": system,
+           # "options": options,
+           "stream": stream}
 
     # non-stream: обычный JSON-ответ
     if not stream:
