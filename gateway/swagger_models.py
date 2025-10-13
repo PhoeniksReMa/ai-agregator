@@ -222,8 +222,7 @@ class OpenAIChatRequest(BaseModel):
                     "messages": [
                         {"role": "system", "content": "Ты — умный ассистент, отвечай по-русски."},
                         {"role": "user", "content": "Объясни правило трёх в одном предложении."}
-                    ],
-                    "temperature": 0.7
+                    ]
                 }
             ]
         }
