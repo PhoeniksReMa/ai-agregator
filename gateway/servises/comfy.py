@@ -2,7 +2,7 @@ from fastapi import APIRouter, Body, HTTPException
 
 import httpx
 
-from gateway.settings import COMFY
+from gateway.settings import COMFY, SERVER_URL
 from gateway.swagger_models import build_simple_comfy_payload, SimpleTxtRequest
 
 HTTP_TIMEOUT=httpx.Timeout(connect=5.0, read=600.0, write=30.0, pool=5.0)
@@ -18,4 +18,6 @@ async def create_image_job(body: SimpleTxtRequest = Body(...)):
             ct = r.headers.get("content-type", "")
             detail = r.json() if "application/json" in ct else r.text
             raise HTTPException(status_code=r.status_code, detail=detail)
-        return r.json()
+        responce = r.json()
+
+        return {"url": f'{SERVER_URL}/history/{responce["prompt_id"]}'}
