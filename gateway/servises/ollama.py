@@ -17,15 +17,15 @@ router = APIRouter(tags=["OLLAMA"])
     summary="Диалог с LLM (Ollama /api/chat)",
     description="Передай массив сообщений (system/user/assistant). Возвращает ответ Ollama в форме chat.",
     tags=["OLLAMA"],
-    # response_model=ChatGatewayResponse,
+    response_model=ChatGatewayResponse,
 )
 async def chat(http: HttpDep, payload):
     body = {
         "model": payload.model or "qwen2.5:3b-instruct-q4_K_M",
         "messages": [m.model_dump(exclude_none=True) for m in payload.messages],
         "stream": bool(payload.stream),
-        # "options": (payload.options.model_dump(exclude_none=True)
-        #             if payload.options else ChatOptions().model_dump(exclude_none=True)),
+        "options": (payload.options.model_dump(exclude_none=True)
+                    if payload.options else ChatOptions().model_dump(exclude_none=True)),
     }
     r = await http.post(f"{OLLAMA}/api/chat", json=body)
     if r.is_error:
@@ -39,7 +39,7 @@ async def chat(http: HttpDep, payload):
     summary="Один запрос (prompt) к LLM (Ollama /api/generate)",
     description="Удобно для простых одношаговых запросов. Под капотом вызывает /api/generate.",
     tags=["OLLAMA"],
-    # response_model=GenerateGatewayResponse,
+    response_model=GenerateGatewayResponse,
 )
 async def message(http: HttpDep, payload):
     if not payload.prompt:
@@ -47,12 +47,12 @@ async def message(http: HttpDep, payload):
 
     model = payload.model or "qwen2.5:3b-instruct-q4_K_M"
     system = payload.system or "Ты — русскоязычный ассистент. Всегда отвечай по-русски, кратко и грамотно."
-    # options = (payload.options.model_dump(exclude_none=True)
-    #            if payload.options else MessageOptions().model_dump(exclude_none=True))
+    options = (payload.options.model_dump(exclude_none=True)
+               if payload.options else MessageOptions().model_dump(exclude_none=True))
     stream = bool(payload.stream)
 
     req = {"model": model, "prompt": payload.prompt, "system": system,
-           # "options": options,
+           "options": options,
            "stream": stream}
 
     # non-stream: обычный JSON-ответ
