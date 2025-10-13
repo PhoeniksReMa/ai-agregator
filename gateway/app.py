@@ -17,7 +17,7 @@ app = FastAPI(title="Local AI Gateway", lifespan=lifespan)
 app.include_router(xtts.router)
 app.include_router(wisper.router)
 app.include_router(ollama.router)
-# app.include_router(comfy.router)
+app.include_router(comfy.router)
 
 @app.get("/health")
 async def health():
